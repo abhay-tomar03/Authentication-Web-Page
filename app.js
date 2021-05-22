@@ -7,10 +7,11 @@
     const ejs = require('ejs');
     const mongoose = require('mongoose');
 
-    //----requiring md5 which is used to hash our details-------------
+    //-- using salting and hashing for more protection----------------
 
-    const md5 = require('md5');
-    
+    const bcrypt =  require('bcrypt');
+
+    const saltRounds =  10;
 
 
     const app = express();
@@ -42,23 +43,28 @@
     })
 
     .post((req,res) => {
+        bcrypt.hash(req.body.password, saltRounds).then(function(hash) {
+            // Store hash in your password DB.
 
-        const newUser = new User({
-            email:req.body.username,
-            password:md5(req.body.password)
-        });
-
-        newUser.save(err => {
-            if(!err) {
-                res.render('secrets')
-            } else {
-                console.log(err);
-            }
-        })
-    })
+            const newUser = new User({
+                email:req.body.username,
+                password:hash
+            });
+    
+            newUser.save(err => {
+                if(!err) {
+                    res.render('secrets')
+                } else {
+                    console.log(err);
+                }
+        })      
+        }); 
+    });
 
     app.route('/login')
     .get((req,res) => {
+
+
         res.render('login');
 
     })
@@ -66,23 +72,23 @@
     .post((req,res) => {
 
         const username = req.body.username;
-        const password = md5(req.body.password);
+        const password = req.body.password;
 
         User.findOne({email:username},(err,foundUser) => {
             if(err) {
                 console.log(err);
             } else {
                 if (foundUser) {
-                    if (foundUser.password === password) {
-                        res.render('secrets')
-                    }
+                    bcrypt.compare(password, foundUser.password).then(function(result) {
+                        if( result == true) {
+                            res.render('secrets');
+                        }
+                    });             
                 }
             }
         });
     });
 
-
-    
     app.listen(3000,(req,res) => {
         console.log("Server is running at port 3000");
     });
