@@ -1,12 +1,15 @@
     //jshint esversion:6
+    require('dotenv').config()
     
 
     const express = require('express');
     const bodyParser = require('body-parser');
     const ejs = require('ejs');
     const mongoose = require('mongoose');
+    
 
     //---Requiring mongoose encyption-----------------
+    const encrypt = require('mongoose-encryption');
     
 
     const app = express();
@@ -24,15 +27,8 @@
         password:String
     });
 
-  
-
-   
-
+    userSchema.plugin(encrypt, { secret: process.env.DB_SECRET, encryptedFields: ['password']});
     const User = new mongoose.model('User',userSchema);
-
-
-
-
     app.route('/')
     .get((req,res) => {
         res.render('home');
